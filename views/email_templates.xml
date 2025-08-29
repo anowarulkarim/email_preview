@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="otp_verification_template_email" model="mail.template">
+        <field name="name">OTP</field>
+        <field name="model_id" ref="model_previewotp_varification"/>
+        <field name="subject">Your Email Verification Code</field>
+        <field name="body_html" type="html">
+            <div style="font-family: Arial, sans-serif; font-size: 14px; color: #333;">
+                <p>Dear Customer</p>
+                <p>Your (OTP) for verification is:</p>
+                <h2 style="color: #3498db;">
+                    <t t-out="ctx.get('otp_code')"/>
+                </h2>
+                <p>This OTP is valid for a limited time. Please do not share it with anyone.</p>
+                <p>If you did not request this OTP, please ignore this email.</p>
+                <p>Best regards,</p>
+            </div>
+        </field>
+    </record>
+</odoo>

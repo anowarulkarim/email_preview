@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <template id="view_email_input_form_email" name="Email Input Form">
+        <t t-call="website.layout">
+            <div class="container mt-5">
+                <h2 class="text-center mb-4">Enter Your Email</h2>
+                <form id="emailOtpForm">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+
+                    <!-- ✅ Email Input Section -->
+                    <div id="emailSection">
+                        <div class="form-group">
+                            <label>Email Address:</label>
+                            <input type="email" name="email" id="emailInput" required="required"
+                                   class="form-control"
+                                   placeholder="Enter your email"/>
+                        </div>
+                        <button type="button" class="btn btn-primary mt-3" id="sendOtpButton">Send OTP</button>
+                    </div>
+
+                    <!-- ✅ OTP Input Section (Initially Hidden) -->
+                    <div id="otpSection" style="display: none;">
+                        <div class="form-group">
+                            <label>Enter OTP:</label>
+                            <input type="text" name="otp" id="otpInput" required="required" class="form-control"
+                                   placeholder="Enter the OTP received"/>
+                        </div>
+
+                        <!-- Hidden Email Field for Verification -->
+                        <input type="hidden" name="email" id="hiddenEmail"/>
+
+                        <button type="button" class="btn btn-success mt-3" id="verifyOtpButton">Verify OTP</button>
+                    </div>
+                </form>
+
+                <!-- ✅ JavaScript for Handling OTP Process -->
+                <script>
+                    document.getElementById("sendOtpButton").addEventListener("click", function () {
+                        let email = document.getElementById("emailInput").value.trim();
+
+                        if (!email) {
+                            alert("Please enter an email!");
+                            return;
+                        }
+
+                        let formData = new FormData();
+                        formData.append("email", email);
+                        formData.append("csrf_token", document.querySelector("[name='csrf_token']").value);
+
+                        fetch("/email_preview/create/otp", {
+                            method: "POST",
+                            body: formData
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.status === "success") {
+                                    alert("OTP Sent Successfully!");
+
+                                    // Hide email section and show OTP section
+                                    document.getElementById("emailSection").style.display = "none";
+                                    document.getElementById("otpSection").style.display = "block";
+
+                                    // Store email in hidden input for OTP verification
+                                    document.getElementById("hiddenEmail").value = email;
+                                } else {
+                                    alert(data.message);
+                                }
+                            })
+                            .catch(error => console.error("Error:", error));
+                    });
+
+                    document.getElementById("verifyOtpButton").addEventListener("click", function () {
+                        let email = document.getElementById("hiddenEmail").value;
+                        let otp = document.getElementById("otpInput").value.trim();
+
+                        if (!otp) {
+                            alert("Please enter the OTP!");
+                            return;
+                        }
+
+                        let formData = new FormData();
+                        formData.append("email", email);
+                        formData.append("otp", otp);
+                        formData.append("csrf_token", document.querySelector("[name='csrf_token']").value);
+
+                        fetch("/email_preview/verify_otp", {
+                            method: "POST",
+                            body: formData
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.status === "success") {
+                                    // alert("OTP Verified Successfully! Proceeding...");
+                                    let formData1 = new FormData();
+                                    formData1.append("email", email);
+                                    formData.append("csrf_token", document.querySelector("[name='csrf_token']").value);
+                                    fetch("/app/preview/create_user", {
+                                        method: "POST",
+                                        body: formData1
+                                        })
+                                        .then(response => {
+                                            if (!response.ok) {
+                                                throw new Error("Network response was not ok");
+                                            }
+                                            return response.text(); // Since the endpoint redirects, we may get HTML or text
+                                        })
+                                        .then(data => {
+                                            // Check if the response contains an error message
+                                            if (data.includes("Please provide a valid email")) {
+                                                alert("Error: Please provide a valid email.");
+                                            } else {
+                                                // Redirect to login page as per the controller
+                                                window.location.href = "/web/login";
+                                            }
+                                        })
+                                        .catch(error => {
+                                            console.error("Error:", error);
+                                            alert("Failed to create user. Please try again.");
+                                        });
+                                } else {
+                                    alert(data.message);
+                                }
+                            })
+                            .catch(error => console.error("Error:", error));
+                    });
+                </script>
+
+                <!-- ✅ Error and      Success Messages -->
+                <t t-if="error">
+                    <div class="alert alert-danger mt-3">
+                        <t t-esc="error"/>
+                    </div>
+                </t>
+                <t t-if="message">
+                    <div class="alert alert-success mt-3">
+                        <t t-esc="message"/>
+                    </div>
+                </t>
+            </div>
+        </t>
+    </template>
+</odoo>
