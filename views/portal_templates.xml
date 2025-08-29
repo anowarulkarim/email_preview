@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <odoo>
-    <template id="preview_form_template" name="App Preview Form">
+    <template id="preview_email_form" name="App Preview Form">
         <t t-call="website.layout">
             <div class="container my-5">
                 <h2>Preview My Odoo App</h2>
-                <form action="/app/preview/create_user" method="post">
+                <form action="/email_preview/create/otp" method="post">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                     <div class="form-group">
                         <label>Email:</label>
@@ -14,5 +14,21 @@
                 </form>
             </div>
         </t>
+    </template>
+    <template id="preview_otp_form" name="App OTP Form">
+        <t t-call="website.layout">
+            <div class="container my-5">
+                 <h2>Preview My Odoo App</h2>
+                <form action="/email_preview/verify_otp" method="post">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <div class="form-group">
+                        <label>OTP:</label>
+                        <input type="text" name="otp" class="form-control" required="True"/>
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-3">Submit OTP</button>
+                </form>
+            </div>
+        </t>
+
     </template>
 </odoo>

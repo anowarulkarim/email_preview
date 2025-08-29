@@ -12,6 +12,10 @@ from odoo.http import request
 from math import ceil
 from itertools import groupby as groupbyelem
 import base64
+import secrets
+import string
+
+
 class AppPreviewController(http.Controller):
 
     @http.route('/app/preview', type='http', auth='public', website=True, csrf=True)
@@ -26,6 +30,12 @@ class AppPreviewController(http.Controller):
         if not email:
             return "Please provide a valid email."
 
+        # Character set: letters + digits
+        characters = string.ascii_letters + string.digits
+
+        # Generate secure random string of length 8
+        password = ''.join(secrets.choice(characters) for _ in range(8))
+
         # Check if user already exists
         user = request.env['res.users'].sudo().search([('login', '=', email)], limit=1)
         if not user:
@@ -34,12 +44,40 @@ class AppPreviewController(http.Controller):
                 'name': email.split('@')[0].capitalize(),
                 'login': email,
                 'email': email,
-                'password': 'mypassword123',
+                'password': password,
                 'groups_id': [(6, 0, [request.env.ref('base.group_user').id])]  # normal user
             })
 
+            template = request.env.ref('email_preview.user_credentials_email_preview')
+            mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
+            email_from = mail_server.smtp_user
+            if template:
+                try:
+                    # Add context with force_send to ensure immediate email sending
+                    email_values = {
+                        'email_to': email,
+                        'email_from': email_from,
+                    }
+
+                    ctx = {
+                        'default_model': 'previewotp.verification',
+                        'default_res_id': 1,
+                        'default_email_to': email,  # Ensure the email field exists
+                        'default_template_id': template.id,
+                        'email': email,
+                        'password': password,
+                    }
+
+                    s = template.with_context(**ctx).sudo().send_mail(user.id, email_values=email_values, force_send=True)
+
+                except Exception as e:
+                    pass
+
+
         # Redirect user to login page
-        return request.redirect('/web/login')
+        # return request.redirect('/web/login')
+        return http.Response('{"status": "success", "message": "User Created successfully"}',
+                             content_type='application/json')
 
     @http.route('/email_preview/create/otp', auth='public', website=True, methods=['POST'], csrf=False)
     def send_otp(self, **post):
@@ -49,6 +87,9 @@ class AppPreviewController(http.Controller):
         if not email:
             return http.Response('{"status": "error", "message": "Email is required"}', content_type='application/json')
 
+        user = request.env['res.users'].sudo().search([('login', '=', email)], limit=1)
+        if user:
+            return http.Response('{"status": "error", "message": "This email already in use. Use different email."}', content_type='application/json')
         # Generate OTP
         otp_code = str(random.randint(100000, 999999))
         expiry_time = datetime.datetime.now() + datetime.timedelta(minutes=5)
@@ -87,7 +128,7 @@ class AppPreviewController(http.Controller):
 
             except Exception as e:
                 pass
-
+        # return request.render('email_preview.preview_otp_form')
         return http.Response('{"status": "success", "message": "OTP has been sent"}', content_type='application/json')
 
     @http.route('/email_preview/verify_otp', auth='public', website=True, methods=['POST'], csrf=False)
@@ -108,6 +149,6 @@ class AppPreviewController(http.Controller):
                                  content_type='application/json')
         # Mark OTP as verified
         otp_record.sudo().write({'verified': True})
-        request.session['otp_email'] = email
+        # return request.redirect('/app/preview/create_user')
         return http.Response('{"status": "success", "message": "OTP verified successfully"}',
                              content_type='application/json')

@@ -93,7 +93,8 @@
                                     // alert("OTP Verified Successfully! Proceeding...");
                                     let formData1 = new FormData();
                                     formData1.append("email", email);
-                                    formData.append("csrf_token", document.querySelector("[name='csrf_token']").value);
+                                    console.log(email)
+                                    formData1.append("csrf_token", document.querySelector("[name='csrf_token']").value);
                                     fetch("/app/preview/create_user", {
                                         method: "POST",
                                         body: formData1
