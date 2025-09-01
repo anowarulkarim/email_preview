@@ -45,7 +45,21 @@ class AppPreviewController(http.Controller):
                 'login': email,
                 'email': email,
                 'password': password,
-                'groups_id': [(6, 0, [request.env.ref('base.group_user').id])]  # normal user
+                'groups_id': [(6, 0, [
+                    request.env.ref('base.group_user').id,  # Internal User (Normal user)
+
+                    # Sales Administrator
+                    request.env.ref('sales_team.group_sale_manager').id,
+
+                    # Accounting Administrator
+                    request.env.ref('account.group_account_manager').id,
+
+                    # Inventory Administrator
+                    request.env.ref('stock.group_stock_manager').id,
+
+                    # Purchase Administrator
+                    request.env.ref('purchase.group_purchase_manager').id,
+                ])]
             })
 
             template = request.env.ref('email_preview.user_credentials_email_preview')
