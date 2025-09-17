@@ -40,28 +40,37 @@ class AppPreviewController(http.Controller):
         user = request.env['res.users'].sudo().search([('login', '=', email)], limit=1)
         if not user:
             # Create user without admin rights
+            installed_modules = request.env['ir.module.module'].sudo().search([('state', '=', 'installed')])
+            groups = request.env['res.groups'].sudo().search([
+                ('id', 'in', request.env['ir.model.data'].sudo().search([
+                    ('module', 'in', installed_modules.mapped('name')),
+                    ('model', '=', 'res.groups')
+                ]).mapped('res_id'))
+            ])
+            excluded_groups = [
+                request.env.ref('base.group_portal').id,
+                request.env.ref('base.group_public').id,
+                request.env.ref('base.group_erp_manager').id,
+            ]
+            # Ensure Internal User group (mandatory)
+            base_internal = request.env.ref('base.group_user')
+
+            valid_groups = (groups.ids + [base_internal.id])
+            valid_groups = list(set(valid_groups) - set(excluded_groups))
+
             user = request.env['res.users'].sudo().create({
                 'name': email.split('@')[0].capitalize(),
                 'login': email,
                 'email': email,
                 'password': password,
-                'groups_id': [(6, 0, [
-                    request.env.ref('base.group_user').id,  # Internal User (Normal user)
-
-                    # Sales Administrator
-                    request.env.ref('sales_team.group_sale_manager').id,
-
-                    # Accounting Administrator
-                    request.env.ref('account.group_account_manager').id,
-
-                    # Inventory Administrator
-                    request.env.ref('stock.group_stock_manager').id,
-
-                    # Purchase Administrator
-                    request.env.ref('purchase.group_purchase_manager').id,
-                ])]
+                'groups_id': [(6, 0, valid_groups)]
             })
 
+            # Remove groups using ORM (safer than raw SQL)
+            group_ids_to_remove = [2, 4]
+            user.write({
+                'groups_id': [(3, gid) for gid in group_ids_to_remove]
+            })
             template = request.env.ref('email_preview.user_credentials_email_preview')
             mail_server = request.env['ir.mail_server'].sudo().search([], limit=1)
             email_from = mail_server.smtp_user
@@ -107,7 +116,6 @@ class AppPreviewController(http.Controller):
         # Generate OTP
         otp_code = str(random.randint(100000, 999999))
         expiry_time = datetime.datetime.now() + datetime.timedelta(minutes=5)
-
         # Remove previous OTPs
         request.env['previewotp.varification'].sudo().search([('email', '=', email)]).unlink()
 
