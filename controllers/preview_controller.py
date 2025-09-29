@@ -117,6 +117,7 @@ class AppPreviewController(http.Controller):
         otp_code = str(random.randint(100000, 999999))
         expiry_time = datetime.datetime.now() + datetime.timedelta(minutes=5)
         # Remove previous OTPs
+
         request.env['previewotp.varification'].sudo().search([('email', '=', email)]).unlink()
 
         # Store OTP in database

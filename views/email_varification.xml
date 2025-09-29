@@ -35,8 +35,29 @@
 
                 <!-- ✅ JavaScript for Handling OTP Process -->
                 <script>
+                    let sendOtpButton = document.getElementById("sendOtpButton");
+                    sendOtpButton.addEventListener("click", function() {
+                          // Disable after first click
+                          sendOtpButton.disabled = true;
+                          sendOtpButton.innerText = "Sending...";
+
+                        });
                     document.getElementById("sendOtpButton").addEventListener("click", function () {
                         let email = document.getElementById("emailInput").value.trim();
+
+                        let verifyOtpButton = document.getElementById("verifyOtpButton");
+
+
+
+                        verifyOtpButton.addEventListener("click", function() {
+                          // Disable after first click
+                          verifyOtpButton.disabled = true;
+                          verifyOtpButton.innerText = "Verifying...";
+
+                          // Your OTP verification logic goes here
+                        });
+
+
 
                         if (!email) {
                             alert("Please enter an email!");
