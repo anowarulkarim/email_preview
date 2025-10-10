@@ -85,6 +85,8 @@
                                     document.getElementById("hiddenEmail").value = email;
                                 } else {
                                     alert(data.message);
+                                    sendOtpButton.disabled = false;
+                                    sendOtpButton.innerText = "Send";
                                 }
                             })
                             .catch(error => console.error("Error:", error));
@@ -93,6 +95,7 @@
                     document.getElementById("verifyOtpButton").addEventListener("click", function () {
                         let email = document.getElementById("hiddenEmail").value;
                         let otp = document.getElementById("otpInput").value.trim();
+                        let verifyOtpButton = document.getElementById("verifyOtpButton");
 
                         if (!otp) {
                             alert("Please enter the OTP!");
@@ -141,6 +144,8 @@
                                         });
                                 } else {
                                     alert(data.message);
+                                    verifyOtpButton.disabled = false;
+                                    verifyOtpButton.innerText = "Varify";
                                 }
                             })
                             .catch(error => console.error("Error:", error));
